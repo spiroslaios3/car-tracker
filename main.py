@@ -44,3 +44,35 @@ def get_vehicle(vehicle_id: int, db: Session = Depends(get_db)):
     if vehicle is None:
         raise HTTPException(status_code=404, detail="Vehicle not found")
     return vehicle
+
+
+@app.put("/vehicles/{vehicle_id}", response_model=schemas.VehicleOut)
+def update_vehicle(
+    vehicle_id: int,
+    data: schemas.VehicleCreate,
+    db: Session = Depends(get_db),
+):
+    vehicle = db.get(models.Vehicle, vehicle_id)
+    if vehicle is None:
+        raise HTTPException(status_code=404, detail="Vehicle not found")
+    for field, value in data.model_dump().items():
+        setattr(vehicle, field, value)
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(
+            status_code=409,
+            detail="A vehicle with this plate already exists",
+        )
+    db.refresh(vehicle)
+    return vehicle
+
+
+@app.delete("/vehicles/{vehicle_id}", status_code=204)
+def delete_vehicle(vehicle_id: int, db: Session = Depends(get_db)):
+    vehicle = db.get(models.Vehicle, vehicle_id)
+    if vehicle is None:
+        raise HTTPException(status_code=404, detail="Vehicle not found")
+    db.delete(vehicle)
+    db.commit()
