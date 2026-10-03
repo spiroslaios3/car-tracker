@@ -1,5 +1,6 @@
 ﻿from fastapi import Depends, FastAPI, HTTPException
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 import models
@@ -20,7 +21,14 @@ def home():
 def create_vehicle(vehicle: schemas.VehicleCreate, db: Session = Depends(get_db)):
     db_vehicle = models.Vehicle(**vehicle.model_dump())
     db.add(db_vehicle)
-    db.commit()
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(
+            status_code=409,
+            detail="A vehicle with this plate already exists",
+        )
     db.refresh(db_vehicle)
     return db_vehicle
 
