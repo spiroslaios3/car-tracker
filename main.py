@@ -76,3 +76,40 @@ def delete_vehicle(vehicle_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Vehicle not found")
     db.delete(vehicle)
     db.commit()
+
+
+@app.post(
+    "/vehicles/{vehicle_id}/services",
+    response_model=schemas.ServiceRecordOut,
+    status_code=201,
+)
+def add_service(
+    vehicle_id: int,
+    record: schemas.ServiceRecordCreate,
+    db: Session = Depends(get_db),
+):
+    vehicle = db.get(models.Vehicle, vehicle_id)
+    if vehicle is None:
+        raise HTTPException(status_code=404, detail="Vehicle not found")
+    db_record = models.ServiceRecord(vehicle_id=vehicle_id, **record.model_dump())
+    db.add(db_record)
+    if record.odometer_km > vehicle.odometer_km:
+        vehicle.odometer_km = record.odometer_km
+    db.commit()
+    db.refresh(db_record)
+    return db_record
+
+
+@app.get(
+    "/vehicles/{vehicle_id}/services",
+    response_model=list[schemas.ServiceRecordOut],
+)
+def list_services(vehicle_id: int, db: Session = Depends(get_db)):
+    if db.get(models.Vehicle, vehicle_id) is None:
+        raise HTTPException(status_code=404, detail="Vehicle not found")
+    stmt = (
+        select(models.ServiceRecord)
+        .where(models.ServiceRecord.vehicle_id == vehicle_id)
+        .order_by(models.ServiceRecord.service_date.desc())
+    )
+    return db.scalars(stmt).all()
