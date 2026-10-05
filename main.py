@@ -113,3 +113,78 @@ def list_services(vehicle_id: int, db: Session = Depends(get_db)):
         .order_by(models.ServiceRecord.service_date.desc())
     )
     return db.scalars(stmt).all()
+
+
+@app.post(
+    "/vehicles/{vehicle_id}/fuel",
+    response_model=schemas.FuelEntryOut,
+    status_code=201,
+)
+def add_fuel(
+    vehicle_id: int,
+    entry: schemas.FuelEntryCreate,
+    db: Session = Depends(get_db),
+):
+    vehicle = db.get(models.Vehicle, vehicle_id)
+    if vehicle is None:
+        raise HTTPException(status_code=404, detail="Vehicle not found")
+    db_entry = models.FuelEntry(vehicle_id=vehicle_id, **entry.model_dump())
+    db.add(db_entry)
+    if entry.odometer_km > vehicle.odometer_km:
+        vehicle.odometer_km = entry.odometer_km
+    db.commit()
+    db.refresh(db_entry)
+    return db_entry
+
+
+@app.get(
+    "/vehicles/{vehicle_id}/fuel",
+    response_model=list[schemas.FuelEntryOut],
+)
+def list_fuel(vehicle_id: int, db: Session = Depends(get_db)):
+    if db.get(models.Vehicle, vehicle_id) is None:
+        raise HTTPException(status_code=404, detail="Vehicle not found")
+    stmt = (
+        select(models.FuelEntry)
+        .where(models.FuelEntry.vehicle_id == vehicle_id)
+        .order_by(models.FuelEntry.odometer_km.desc())
+    )
+    return db.scalars(stmt).all()
+
+
+@app.get(
+    "/vehicles/{vehicle_id}/fuel/stats",
+    response_model=schemas.FuelStats,
+)
+def fuel_stats(vehicle_id: int, db: Session = Depends(get_db)):
+    if db.get(models.Vehicle, vehicle_id) is None:
+        raise HTTPException(status_code=404, detail="Vehicle not found")
+    stmt = (
+        select(models.FuelEntry)
+        .where(models.FuelEntry.vehicle_id == vehicle_id)
+        .order_by(models.FuelEntry.odometer_km)
+    )
+    entries = db.scalars(stmt).all()
+    total_cost = sum(e.total_cost for e in entries)
+
+    total_km = 0
+    if len(entries) >= 2:
+        total_km = entries[-1].odometer_km - entries[0].odometer_km
+    if total_km <= 0:
+        return schemas.FuelStats(
+            entries_count=len(entries),
+            total_km=0,
+            avg_consumption_l_per_100km=None,
+            total_cost=total_cost,
+            cost_per_km=None,
+        )
+
+    liters_used = sum(e.liters for e in entries[1:])
+    cost_used = sum(e.total_cost for e in entries[1:])
+    return schemas.FuelStats(
+        entries_count=len(entries),
+        total_km=total_km,
+        avg_consumption_l_per_100km=round(liters_used / total_km * 100, 2),
+        total_cost=total_cost,
+        cost_per_km=round(cost_used / total_km, 3),
+    )

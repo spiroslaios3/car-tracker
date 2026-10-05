@@ -28,3 +28,24 @@ class ServiceRecordOut(ServiceRecordCreate):
     model_config = ConfigDict(from_attributes=True)
     id: int
     vehicle_id: int
+
+
+class FuelEntryCreate(BaseModel):
+    fuel_date: date
+    odometer_km: int
+    liters: float
+    total_cost: float
+
+
+class FuelEntryOut(FuelEntryCreate):
+    model_config = ConfigDict(from_attributes=True)
+    id: int
+    vehicle_id: int
+
+
+class FuelStats(BaseModel):
+    entries_count: int
+    total_km: int
+    avg_consumption_l_per_100km: float | None
+    total_cost: float
+    cost_per_km: float | None
