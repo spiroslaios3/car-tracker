@@ -188,3 +188,8 @@ def fuel_stats(vehicle_id: int, db: Session = Depends(get_db)):
         total_cost=total_cost,
         cost_per_km=round(cost_used / total_km, 3),
     )
+
+
+from fastapi.staticfiles import StaticFiles
+
+app.mount("/app", StaticFiles(directory="static", html=True), name="static")

@@ -1,0 +1,72 @@
+﻿<!DOCTYPE html>
+<html lang="el">
+<head>
+  <meta charset="UTF-8">
+  <title>Car Tracker</title>
+</head>
+<body>
+  <h1>Car Tracker</h1>
+
+  <h2>Προσθήκη οχήματος</h2>
+  <form id="vehicle-form">
+    <input id="make" placeholder="Μάρκα" required>
+    <input id="model" placeholder="Μοντέλο" required>
+    <input id="year" type="number" placeholder="Έτος" required>
+    <input id="plate" placeholder="Πινακίδα" required>
+    <input id="odometer" type="number" placeholder="Χιλιόμετρα">
+    <button type="submit">Προσθήκη</button>
+  </form>
+  <p id="message"></p>
+
+  <h2>Τα οχήματά μου</h2>
+  <ul id="vehicle-list"></ul>
+
+  <script>
+    async function loadVehicles() {
+      const response = await fetch("/vehicles");
+      const vehicles = await response.json();
+
+      const list = document.getElementById("vehicle-list");
+      list.innerHTML = "";
+
+      for (const v of vehicles) {
+        const li = document.createElement("li");
+        li.textContent = `${v.make} ${v.model} (${v.year}) - ${v.plate} - ${v.odometer_km} km`;
+        list.appendChild(li);
+      }
+    }
+
+    document.getElementById("vehicle-form").addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const message = document.getElementById("message");
+
+      const vehicle = {
+        make: document.getElementById("make").value,
+        model: document.getElementById("model").value,
+        year: Number(document.getElementById("year").value),
+        plate: document.getElementById("plate").value,
+        odometer_km: Number(document.getElementById("odometer").value) || 0,
+      };
+
+      const response = await fetch("/vehicles", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(vehicle),
+      });
+
+      if (response.ok) {
+        message.textContent = "Το όχημα προστέθηκε!";
+        event.target.reset();
+        loadVehicles();
+      } else if (response.status === 409) {
+        const error = await response.json();
+        message.textContent = "Σφάλμα: " + error.detail;
+      } else {
+        message.textContent = "Κάτι πήγε στραβά (κωδικός " + response.status + ")";
+      }
+    });
+
+    loadVehicles();
+  </script>
+</body>
+</html>
