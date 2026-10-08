@@ -18,8 +18,18 @@
   </form>
   <p id="message"></p>
 
-  <h2>Τα οχήματά μου</h2>
+  <h2>Τα οχήματά μου (πάτα πάνω σε ένα για λεπτομέρειες)</h2>
   <ul id="vehicle-list"></ul>
+
+  <div id="details" hidden>
+    <h2 id="details-title"></h2>
+
+    <h3>Κατανάλωση καυσίμου</h3>
+    <p id="fuel-stats"></p>
+
+    <h3>Ιστορικό service</h3>
+    <ul id="service-list"></ul>
+  </div>
 
   <script>
     async function loadVehicles() {
@@ -32,7 +42,45 @@
       for (const v of vehicles) {
         const li = document.createElement("li");
         li.textContent = `${v.make} ${v.model} (${v.year}) - ${v.plate} - ${v.odometer_km} km`;
+        li.style.cursor = "pointer";
+        li.addEventListener("click", () => showDetails(v));
         list.appendChild(li);
+      }
+    }
+
+    async function showDetails(vehicle) {
+      document.getElementById("details").hidden = false;
+      document.getElementById("details-title").textContent =
+        `${vehicle.make} ${vehicle.model} - ${vehicle.plate}`;
+
+      const [servicesResponse, statsResponse] = await Promise.all([
+        fetch(`/vehicles/${vehicle.id}/services`),
+        fetch(`/vehicles/${vehicle.id}/fuel/stats`),
+      ]);
+      const services = await servicesResponse.json();
+      const stats = await statsResponse.json();
+
+      const statsText = document.getElementById("fuel-stats");
+      if (stats.avg_consumption_l_per_100km === null) {
+        statsText.textContent = "Δεν υπάρχουν αρκετά δεδομένα (χρειάζονται τουλάχιστον 2 ανεφοδιασμοί).";
+      } else {
+        statsText.textContent =
+          `Μέση κατανάλωση: ${stats.avg_consumption_l_per_100km} L/100km - ` +
+          `Χιλιόμετρα: ${stats.total_km} - Συνολικό κόστος: ${stats.total_cost} €`;
+      }
+
+      const serviceList = document.getElementById("service-list");
+      serviceList.innerHTML = "";
+      if (services.length === 0) {
+        serviceList.textContent = "Δεν υπάρχουν καταχωρημένα service.";
+      }
+      for (const s of services) {
+        const li = document.createElement("li");
+        li.textContent = `${s.service_date} - ${s.service_type} - ${s.odometer_km} km - ${s.cost} €`;
+        if (s.notes) {
+          li.textContent += ` (${s.notes})`;
+        }
+        serviceList.appendChild(li);
       }
     }
 
