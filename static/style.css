@@ -1,0 +1,169 @@
+﻿:root {
+  color-scheme: dark;
+  --bg: #13111c;
+  --card: #1e1a2e;
+  --text: #ede9fe;
+  --muted: #a8a0c4;
+  --accent: #c4b5fd;
+  --accent-dark: #a78bfa;
+  --danger: #fb7185;
+  --border: #3b3556;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+body {
+  font-family: "Segoe UI", system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 24px 16px 60px;
+  line-height: 1.5;
+}
+
+h1 {
+  font-size: 2rem;
+  margin-bottom: 4px;
+}
+
+h1::before {
+  content: "🚗 ";
+}
+
+h2 {
+  font-size: 1.25rem;
+  margin-top: 32px;
+}
+
+h3 {
+  font-size: 1rem;
+  color: var(--muted);
+  margin-top: 24px;
+}
+
+form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  background: var(--card);
+  padding: 16px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+}
+
+input {
+  flex: 1 1 150px;
+  padding: 10px 12px;
+  background: var(--card);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font: inherit;
+}
+
+input:focus {
+  outline: 2px solid var(--accent);
+  border-color: transparent;
+}
+
+label {
+  flex: 1 1 200px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--muted);
+}
+
+label input {
+  flex: 1;
+}
+
+button {
+  background: var(--accent);
+    color: #1e1033;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 16px;
+  font: inherit;
+  cursor: pointer;
+}
+
+button:hover {
+  background: var(--accent-dark);
+}
+
+ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 8px;
+}
+
+li {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 16px;
+}
+
+#vehicle-list li {
+  cursor: pointer;
+  transition: transform 0.1s, box-shadow 0.1s, border-color 0.1s;
+}
+
+#vehicle-list li:hover {
+  border-color: var(--accent);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.12);
+}
+
+#details {
+  margin-top: 32px;
+  padding: 8px 24px 24px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.08);
+}
+
+#details li,
+#details form {
+  background: var(--bg);
+}
+
+#details-title {
+  margin-top: 16px;
+  color: var(--accent);
+}
+
+#fuel-stats {
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+#message,
+#detail-message {
+  color: var(--accent);
+  min-height: 1.5em;
+}
+
+#service-list button {
+  background: transparent;
+  color: var(--danger);
+  border: 1px solid var(--danger);
+  padding: 4px 10px;
+  font-size: 0.85rem;
+}
+
+#service-list button:hover {
+  background: var(--danger);
+    color: #1e1033;;
+}
