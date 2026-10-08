@@ -193,3 +193,12 @@ def fuel_stats(vehicle_id: int, db: Session = Depends(get_db)):
 from fastapi.staticfiles import StaticFiles
 
 app.mount("/app", StaticFiles(directory="static", html=True), name="static")
+
+
+@app.delete("/services/{service_id}", status_code=204)
+def delete_service(service_id: int, db: Session = Depends(get_db)):
+    record = db.get(models.ServiceRecord, service_id)
+    if record is None:
+        raise HTTPException(status_code=404, detail="Service not found")
+    db.delete(record)
+    db.commit()

@@ -27,11 +27,59 @@
     <h3>Κατανάλωση καυσίμου</h3>
     <p id="fuel-stats"></p>
 
+    <h3>Ιστορικό ανεφοδιασμών</h3>
+    <ul id="fuel-list"></ul>
+
     <h3>Ιστορικό service</h3>
     <ul id="service-list"></ul>
+
+    <h3>Νέο service</h3>
+    <form id="service-form">
+      <label>Ημερομηνία <input id="service-date" type="date" required></label>
+      <input id="service-odometer" type="number" placeholder="Χιλιόμετρα" required>
+      <input id="service-type" placeholder="Τύπος (π.χ. Φρένα)" required>
+      <input id="service-cost" type="number" step="any" placeholder="Κόστος €">
+      <input id="service-notes" placeholder="Σημειώσεις">
+      <button type="submit">Προσθήκη service</button>
+    </form>
+
+    <h3>Νέος ανεφοδιασμός</h3>
+    <form id="fuel-form">
+      <label>Ημερομηνία <input id="fuel-date" type="date" required></label>
+      <input id="fuel-odometer" type="number" placeholder="Χιλιόμετρα" required>
+      <input id="fuel-liters" type="number" step="any" placeholder="Λίτρα" required>
+      <input id="fuel-cost" type="number" step="any" placeholder="Συνολικό κόστος €" required>
+      <button type="submit">Προσθήκη ανεφοδιασμού</button>
+    </form>
+
+    <p id="detail-message"></p>
   </div>
 
   <script>
+    let currentVehicleId = null;
+
+    function postJson(url, data) {
+      return fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+    }
+
+    async function showResult(response, messageElement, successText) {
+      if (response.ok) {
+        messageElement.textContent = successText;
+        return true;
+      }
+      if (response.status === 409 || response.status === 404) {
+        const error = await response.json();
+        messageElement.textContent = "Σφάλμα: " + error.detail;
+      } else {
+        messageElement.textContent = "Κάτι πήγε στραβά (κωδικός " + response.status + ")";
+      }
+      return false;
+    }
+
     async function loadVehicles() {
       const response = await fetch("/vehicles");
       const vehicles = await response.json();
@@ -43,22 +91,30 @@
         const li = document.createElement("li");
         li.textContent = `${v.make} ${v.model} (${v.year}) - ${v.plate} - ${v.odometer_km} km`;
         li.style.cursor = "pointer";
-        li.addEventListener("click", () => showDetails(v));
+        li.addEventListener("click", () => {
+          document.getElementById("detail-message").textContent = "";
+          showDetails(v.id);
+        });
         list.appendChild(li);
       }
     }
 
-    async function showDetails(vehicle) {
+    async function showDetails(vehicleId) {
+      currentVehicleId = vehicleId;
+      loadFuel(vehicleId);
       document.getElementById("details").hidden = false;
-      document.getElementById("details-title").textContent =
-        `${vehicle.make} ${vehicle.model} - ${vehicle.plate}`;
 
-      const [servicesResponse, statsResponse] = await Promise.all([
-        fetch(`/vehicles/${vehicle.id}/services`),
-        fetch(`/vehicles/${vehicle.id}/fuel/stats`),
+      const [vehicleResponse, servicesResponse, statsResponse] = await Promise.all([
+        fetch(`/vehicles/${vehicleId}`),
+        fetch(`/vehicles/${vehicleId}/services`),
+        fetch(`/vehicles/${vehicleId}/fuel/stats`),
       ]);
+      const vehicle = await vehicleResponse.json();
       const services = await servicesResponse.json();
       const stats = await statsResponse.json();
+
+      document.getElementById("details-title").textContent =
+        `${vehicle.make} ${vehicle.model} - ${vehicle.plate}`;
 
       const statsText = document.getElementById("fuel-stats");
       if (stats.avg_consumption_l_per_100km === null) {
@@ -80,14 +136,45 @@
         if (s.notes) {
           li.textContent += ` (${s.notes})`;
         }
+
+        const deleteButton = document.createElement("button");
+        deleteButton.textContent = "Διαγραφή";
+        deleteButton.style.marginLeft = "10px";
+        deleteButton.addEventListener("click", async () => {
+          await fetch(`/services/${s.id}`, { method: "DELETE" });
+          showDetails(currentVehicleId);
+        });
+        li.appendChild(deleteButton);
+
         serviceList.appendChild(li);
+      }
+    }
+
+    async function loadFuel(vehicleId) {
+      const response = await fetch(`/vehicles/${vehicleId}/fuel`);
+      const entries = await response.json();
+
+      const fuelList = document.getElementById("fuel-list");
+      fuelList.innerHTML = "";
+      if (entries.length === 0) {
+        fuelList.textContent = "Δεν υπάρχουν καταχωρημένοι ανεφοδιασμοί.";
+      }
+      for (const f of entries) {
+        const li = document.createElement("li");
+        li.textContent = `${f.fuel_date} - ${f.odometer_km} km - ${f.liters} L - ${f.total_cost} €`;
+        fuelList.appendChild(li);
+      }
+    }
+
+    async function refreshAll() {
+      await loadVehicles();
+      if (currentVehicleId !== null) {
+        await showDetails(currentVehicleId);
       }
     }
 
     document.getElementById("vehicle-form").addEventListener("submit", async (event) => {
       event.preventDefault();
-      const message = document.getElementById("message");
-
       const vehicle = {
         make: document.getElementById("make").value,
         model: document.getElementById("model").value,
@@ -95,22 +182,44 @@
         plate: document.getElementById("plate").value,
         odometer_km: Number(document.getElementById("odometer").value) || 0,
       };
-
-      const response = await fetch("/vehicles", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(vehicle),
-      });
-
-      if (response.ok) {
-        message.textContent = "Το όχημα προστέθηκε!";
+      const response = await postJson("/vehicles", vehicle);
+      const ok = await showResult(response, document.getElementById("message"), "Το όχημα προστέθηκε!");
+      if (ok) {
         event.target.reset();
         loadVehicles();
-      } else if (response.status === 409) {
-        const error = await response.json();
-        message.textContent = "Σφάλμα: " + error.detail;
-      } else {
-        message.textContent = "Κάτι πήγε στραβά (κωδικός " + response.status + ")";
+      }
+    });
+
+    document.getElementById("service-form").addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const record = {
+        service_date: document.getElementById("service-date").value,
+        odometer_km: Number(document.getElementById("service-odometer").value),
+        service_type: document.getElementById("service-type").value,
+        cost: Number(document.getElementById("service-cost").value) || 0,
+        notes: document.getElementById("service-notes").value || null,
+      };
+      const response = await postJson(`/vehicles/${currentVehicleId}/services`, record);
+      const ok = await showResult(response, document.getElementById("detail-message"), "Το service προστέθηκε!");
+      if (ok) {
+        event.target.reset();
+        refreshAll();
+      }
+    });
+
+    document.getElementById("fuel-form").addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const entry = {
+        fuel_date: document.getElementById("fuel-date").value,
+        odometer_km: Number(document.getElementById("fuel-odometer").value),
+        liters: Number(document.getElementById("fuel-liters").value),
+        total_cost: Number(document.getElementById("fuel-cost").value),
+      };
+      const response = await postJson(`/vehicles/${currentVehicleId}/fuel`, entry);
+      const ok = await showResult(response, document.getElementById("detail-message"), "Ο ανεφοδιασμός προστέθηκε!");
+      if (ok) {
+        event.target.reset();
+        refreshAll();
       }
     });
 
@@ -118,3 +227,4 @@
   </script>
 </body>
 </html>
+
