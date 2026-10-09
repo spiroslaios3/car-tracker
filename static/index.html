@@ -25,6 +25,15 @@
   <div id="details" hidden>
     <h2 id="details-title"></h2>
 
+    <h3>Υπενθυμίσεις</h3>
+    <ul id="reminder-list"></ul>
+    <form id="reminder-form">
+      <input id="reminder-title" placeholder="Τίτλος (π.χ. ΚΤΕΟ)" required>
+      <label>Έως <input id="reminder-date" type="date"></label>
+      <input id="reminder-km" type="number" placeholder="ή στα χιλιόμετρα">
+      <button type="submit">Προσθήκη υπενθύμισης</button>
+    </form>
+
     <h3>Κατανάλωση καυσίμου</h3>
     <p id="fuel-stats"></p>
 
@@ -72,7 +81,7 @@
         messageElement.textContent = successText;
         return true;
       }
-      if (response.status === 409 || response.status === 404) {
+      if (response.status === 409 || response.status === 404 || response.status === 400) {
         const error = await response.json();
         messageElement.textContent = "Σφάλμα: " + error.detail;
       } else {
@@ -103,6 +112,7 @@
     async function showDetails(vehicleId) {
       currentVehicleId = vehicleId;
       loadFuel(vehicleId);
+      loadReminders(vehicleId);
       document.getElementById("details").hidden = false;
 
       const [vehicleResponse, servicesResponse, statsResponse] = await Promise.all([
@@ -167,6 +177,61 @@
       }
     }
 
+    async function loadReminders(vehicleId) {
+      const response = await fetch(`/vehicles/${vehicleId}/reminders`);
+      const reminders = await response.json();
+
+      const list = document.getElementById("reminder-list");
+      list.innerHTML = "";
+      if (reminders.length === 0) {
+        list.textContent = "Δεν υπάρχουν υπενθυμίσεις.";
+      }
+      for (const r of reminders) {
+        const li = document.createElement("li");
+        li.classList.add("reminder", r.status);
+
+        const parts = [];
+        if (r.days_left !== null) {
+          parts.push(r.days_left < 0
+            ? `έληξε πριν ${-r.days_left} μέρες`
+            : `σε ${r.days_left} μέρες (${r.due_date})`);
+        }
+        if (r.km_left !== null) {
+          parts.push(r.km_left < 0
+            ? `ξεπεράστηκε κατά ${-r.km_left} km`
+            : `σε ${r.km_left} km (στα ${r.due_odometer_km} km)`);
+        }
+        li.textContent = `${r.title} - ${parts.join(" ή ")}`;
+
+        const deleteButton = document.createElement("button");
+        deleteButton.textContent = "Διαγραφή";
+        deleteButton.style.marginLeft = "10px";
+        deleteButton.addEventListener("click", async () => {
+          await fetch(`/reminders/${r.id}`, { method: "DELETE" });
+          loadReminders(currentVehicleId);
+        });
+        li.appendChild(deleteButton);
+
+        list.appendChild(li);
+      }
+    }
+
+    document.getElementById("reminder-form").addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const kmValue = document.getElementById("reminder-km").value;
+      const reminder = {
+        title: document.getElementById("reminder-title").value,
+        due_date: document.getElementById("reminder-date").value || null,
+        due_odometer_km: kmValue ? Number(kmValue) : null,
+      };
+      const response = await postJson(`/vehicles/${currentVehicleId}/reminders`, reminder);
+      const ok = await showResult(response, document.getElementById("detail-message"), "Η υπενθύμιση προστέθηκε!");
+      if (ok) {
+        event.target.reset();
+        loadReminders(currentVehicleId);
+      }
+    });
+
     async function refreshAll() {
       await loadVehicles();
       if (currentVehicleId !== null) {
@@ -228,5 +293,6 @@
   </script>
 </body>
 </html>
+
 
 

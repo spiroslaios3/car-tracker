@@ -167,3 +167,33 @@ li {
   background: var(--danger);
     color: #1e1033;;
 }
+
+
+.reminder {
+  border-left: 4px solid var(--border);
+}
+
+.reminder.overdue {
+  border-left-color: var(--danger);
+}
+
+.reminder.soon {
+  border-left-color: #fbbf24;
+}
+
+.reminder.ok {
+  border-left-color: #34d399;
+}
+
+#reminder-list button {
+  background: transparent;
+  color: var(--danger);
+  border: 1px solid var(--danger);
+  padding: 4px 10px;
+  font-size: 0.85rem;
+}
+
+#reminder-list button:hover {
+  background: var(--danger);
+  color: #1e1033;
+}
