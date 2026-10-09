@@ -22,6 +22,9 @@ class Vehicle(Base):
     fuel_entries: Mapped[list["FuelEntry"]] = relationship(
         back_populates="vehicle", cascade="all, delete-orphan"
     )
+    reminders: Mapped[list["Reminder"]] = relationship(
+        back_populates="vehicle", cascade="all, delete-orphan"
+    )
 
 
 class ServiceRecord(Base):
@@ -49,3 +52,15 @@ class FuelEntry(Base):
     total_cost: Mapped[float]
 
     vehicle: Mapped["Vehicle"] = relationship(back_populates="fuel_entries")
+
+
+class Reminder(Base):
+    __tablename__ = "reminders"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    vehicle_id: Mapped[int] = mapped_column(ForeignKey("vehicles.id"))
+    title: Mapped[str] = mapped_column(String(100))
+    due_date: Mapped[date | None] = mapped_column(default=None)
+    due_odometer_km: Mapped[int | None] = mapped_column(default=None)
+
+    vehicle: Mapped["Vehicle"] = relationship(back_populates="reminders")

@@ -49,3 +49,18 @@ class FuelStats(BaseModel):
     avg_consumption_l_per_100km: float | None
     total_cost: float
     cost_per_km: float | None
+
+
+class ReminderCreate(BaseModel):
+    title: str
+    due_date: date | None = None
+    due_odometer_km: int | None = None
+
+
+class ReminderOut(ReminderCreate):
+    model_config = ConfigDict(from_attributes=True)
+    id: int
+    vehicle_id: int
+    days_left: int | None = None
+    km_left: int | None = None
+    status: str = "ok"

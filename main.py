@@ -202,3 +202,82 @@ def delete_service(service_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Service not found")
     db.delete(record)
     db.commit()
+
+
+from datetime import date
+
+
+def reminder_to_out(reminder: models.Reminder, vehicle: models.Vehicle) -> schemas.ReminderOut:
+    days_left = None
+    if reminder.due_date is not None:
+        days_left = (reminder.due_date - date.today()).days
+
+    km_left = None
+    if reminder.due_odometer_km is not None:
+        km_left = reminder.due_odometer_km - vehicle.odometer_km
+
+    status = "ok"
+    if (days_left is not None and days_left < 0) or (km_left is not None and km_left < 0):
+        status = "overdue"
+    elif (days_left is not None and days_left <= 30) or (km_left is not None and km_left <= 1000):
+        status = "soon"
+
+    return schemas.ReminderOut(
+        id=reminder.id,
+        vehicle_id=reminder.vehicle_id,
+        title=reminder.title,
+        due_date=reminder.due_date,
+        due_odometer_km=reminder.due_odometer_km,
+        days_left=days_left,
+        km_left=km_left,
+        status=status,
+    )
+
+
+@app.post(
+    "/vehicles/{vehicle_id}/reminders",
+    response_model=schemas.ReminderOut,
+    status_code=201,
+)
+def add_reminder(
+    vehicle_id: int,
+    data: schemas.ReminderCreate,
+    db: Session = Depends(get_db),
+):
+    vehicle = db.get(models.Vehicle, vehicle_id)
+    if vehicle is None:
+        raise HTTPException(status_code=404, detail="Vehicle not found")
+    if data.due_date is None and data.due_odometer_km is None:
+        raise HTTPException(
+            status_code=400,
+            detail="Provide a due date or a due odometer (km)",
+        )
+    reminder = models.Reminder(vehicle_id=vehicle_id, **data.model_dump())
+    db.add(reminder)
+    db.commit()
+    db.refresh(reminder)
+    return reminder_to_out(reminder, vehicle)
+
+
+@app.get(
+    "/vehicles/{vehicle_id}/reminders",
+    response_model=list[schemas.ReminderOut],
+)
+def list_reminders(vehicle_id: int, db: Session = Depends(get_db)):
+    vehicle = db.get(models.Vehicle, vehicle_id)
+    if vehicle is None:
+        raise HTTPException(status_code=404, detail="Vehicle not found")
+    stmt = select(models.Reminder).where(models.Reminder.vehicle_id == vehicle_id)
+    items = [reminder_to_out(r, vehicle) for r in db.scalars(stmt).all()]
+    order = {"overdue": 0, "soon": 1, "ok": 2}
+    items.sort(key=lambda r: order[r.status])
+    return items
+
+
+@app.delete("/reminders/{reminder_id}", status_code=204)
+def delete_reminder(reminder_id: int, db: Session = Depends(get_db)):
+    reminder = db.get(models.Reminder, reminder_id)
+    if reminder is None:
+        raise HTTPException(status_code=404, detail="Reminder not found")
+    db.delete(reminder)
+    db.commit()
