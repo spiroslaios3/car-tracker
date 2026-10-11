@@ -64,3 +64,7 @@ class ReminderOut(ReminderCreate):
     days_left: int | None = None
     km_left: int | None = None
     status: str = "ok"
+
+
+class UrgentReminderOut(ReminderOut):
+    vehicle_label: str

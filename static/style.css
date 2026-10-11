@@ -197,3 +197,17 @@ li {
   background: var(--danger);
   color: #1e1033;
 }
+
+
+#fuel-list button {
+  background: transparent;
+  color: var(--danger);
+  border: 1px solid var(--danger);
+  padding: 4px 10px;
+  font-size: 0.85rem;
+}
+
+#fuel-list button:hover {
+  background: var(--danger);
+  color: #1e1033;
+}

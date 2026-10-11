@@ -281,3 +281,30 @@ def delete_reminder(reminder_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Reminder not found")
     db.delete(reminder)
     db.commit()
+
+
+@app.delete("/fuel/{fuel_id}", status_code=204)
+def delete_fuel(fuel_id: int, db: Session = Depends(get_db)):
+    entry = db.get(models.FuelEntry, fuel_id)
+    if entry is None:
+        raise HTTPException(status_code=404, detail="Fuel entry not found")
+    db.delete(entry)
+    db.commit()
+
+
+@app.get("/summary/reminders", response_model=list[schemas.UrgentReminderOut])
+def urgent_reminders(db: Session = Depends(get_db)):
+    result = []
+    for vehicle in db.scalars(select(models.Vehicle)).all():
+        for reminder in vehicle.reminders:
+            out = reminder_to_out(reminder, vehicle)
+            if out.status in ("overdue", "soon"):
+                result.append(
+                    schemas.UrgentReminderOut(
+                        **out.model_dump(),
+                        vehicle_label=f"{vehicle.make} {vehicle.model} ({vehicle.plate})",
+                    )
+                )
+    order = {"overdue": 0, "soon": 1}
+    result.sort(key=lambda r: order[r.status])
+    return result

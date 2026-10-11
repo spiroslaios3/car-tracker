@@ -8,6 +8,11 @@
 <body>
   <h1>Car Tracker</h1>
 
+  <section id="summary" hidden>
+    <h2>Χρειάζονται προσοχή</h2>
+    <ul id="summary-list"></ul>
+  </section>
+
   <h2>Προσθήκη οχήματος</h2>
   <form id="vehicle-form">
     <input id="make" placeholder="Μάρκα" required>
@@ -161,6 +166,43 @@
       }
     }
 
+    function describeReminder(r) {
+      const parts = [];
+      if (r.days_left !== null) {
+        parts.push(r.days_left < 0
+          ? `έληξε πριν ${-r.days_left} μέρες`
+          : `σε ${r.days_left} μέρες (${r.due_date})`);
+      }
+      if (r.km_left !== null) {
+        parts.push(r.km_left < 0
+          ? `ξεπεράστηκε κατά ${-r.km_left} km`
+          : `σε ${r.km_left} km (στα ${r.due_odometer_km} km)`);
+      }
+      return parts.join(" ή ");
+    }
+
+    async function loadSummary() {
+      const response = await fetch("/summary/reminders");
+      const items = await response.json();
+
+      const section = document.getElementById("summary");
+      const list = document.getElementById("summary-list");
+      list.innerHTML = "";
+      section.hidden = items.length === 0;
+
+      for (const r of items) {
+        const li = document.createElement("li");
+        li.classList.add("reminder", r.status);
+        li.style.cursor = "pointer";
+        li.textContent = `${r.vehicle_label}: ${r.title} - ${describeReminder(r)}`;
+        li.addEventListener("click", async () => {
+          await showDetails(r.vehicle_id);
+          document.getElementById("details").scrollIntoView({ behavior: "smooth" });
+        });
+        list.appendChild(li);
+      }
+    }
+
     async function loadFuel(vehicleId) {
       const response = await fetch(`/vehicles/${vehicleId}/fuel`);
       const entries = await response.json();
@@ -173,11 +215,21 @@
       for (const f of entries) {
         const li = document.createElement("li");
         li.textContent = `${f.fuel_date} - ${f.odometer_km} km - ${f.liters} L - ${f.total_cost} €`;
+        const deleteButton = document.createElement("button");
+        deleteButton.textContent = "Διαγραφή";
+        deleteButton.style.marginLeft = "10px";
+        deleteButton.addEventListener("click", async () => {
+          await fetch(`/fuel/${f.id}`, { method: "DELETE" });
+          showDetails(currentVehicleId);
+        });
+        li.appendChild(deleteButton);
+
         fuelList.appendChild(li);
       }
     }
 
     async function loadReminders(vehicleId) {
+      loadSummary();
       const response = await fetch(`/vehicles/${vehicleId}/reminders`);
       const reminders = await response.json();
 
@@ -290,9 +342,11 @@
     });
 
     loadVehicles();
+  loadSummary();
   </script>
 </body>
 </html>
+
 
 
 
