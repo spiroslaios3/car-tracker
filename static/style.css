@@ -276,3 +276,19 @@ button.secondary:hover {
   color: var(--hero-text);
 }
 
+
+
+.hero {
+  text-align: center;
+}
+
+.hero h1::before {
+  content: none;
+}
+
+.hero-logo {
+  display: block;
+  width: min(420px, 100%);
+  height: auto;
+  margin: 0 auto;
+}
