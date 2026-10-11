@@ -1,13 +1,20 @@
 ﻿:root {
   color-scheme: dark;
-  --bg: #13111c;
-  --card: #1e1a2e;
-  --text: #ede9fe;
-  --muted: #a8a0c4;
-  --accent: #c4b5fd;
-  --accent-dark: #a78bfa;
-  --danger: #fb7185;
-  --border: #3b3556;
+  --bg: #232b2e;
+  --card: #2c363a;
+  --text: #ece4d6;
+  --muted: #a2aa9a;
+  --accent: #c3b08f;
+  --accent-dark: #ad9a7a;
+  --danger: #e08a7b;
+  --border: #3f4b4f;
+
+  --on-accent: #1d2528;
+  --ok: #8fae7e;
+  --soon: #d9b35f;
+  --hero-from: rgba(29, 37, 40, 0.88);
+  --hero-to: rgba(125, 143, 114, 0.45);
+  --hero-text: #d8d2c0;
 }
 
 * {
@@ -93,7 +100,7 @@ label input {
 
 button {
   background: var(--accent);
-    color: #1e1033;
+    color: var(--on-accent);
   border: none;
   border-radius: 8px;
   padding: 10px 16px;
@@ -171,7 +178,7 @@ li {
 
 #service-list button:hover {
   background: var(--danger);
-    color: #1e1033;;
+    color: var(--on-accent);;
 }
 
 
@@ -184,11 +191,11 @@ li {
 }
 
 .reminder.soon {
-  border-left-color: #fbbf24;
+  border-left-color: var(--soon);
 }
 
 .reminder.ok {
-  border-left-color: #34d399;
+  border-left-color: var(--ok);
 }
 
 #reminder-list button {
@@ -201,7 +208,7 @@ li {
 
 #reminder-list button:hover {
   background: var(--danger);
-  color: #1e1033;
+  color: var(--on-accent);
 }
 
 
@@ -215,7 +222,7 @@ li {
 
 #fuel-list button:hover {
   background: var(--danger);
-  color: #1e1033;
+  color: var(--on-accent);
 }
 
 
@@ -233,7 +240,7 @@ button.danger {
 
 button.danger:hover {
   background: var(--danger);
-  color: #1e1033;
+  color: var(--on-accent);
 }
 
 button.secondary {
@@ -254,7 +261,7 @@ button.secondary:hover {
   border-radius: 16px;
   overflow: hidden;
   background:
-    linear-gradient(135deg, rgba(19, 17, 28, 0.85), rgba(91, 33, 182, 0.55)),
+    linear-gradient(135deg, var(--hero-from), var(--hero-to)),
     url("images/banner.jpg") center / cover no-repeat;
 }
 
@@ -266,5 +273,6 @@ button.secondary:hover {
 
 .hero p {
   margin: 8px 0 0;
-  color: #ddd6fe;
+  color: var(--hero-text);
 }
+
