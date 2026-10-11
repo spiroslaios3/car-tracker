@@ -34,7 +34,13 @@ h1 {
 }
 
 h1::before {
-  content: "🚗 ";
+  content: "";
+  display: inline-block;
+  width: 2em;
+  height: 2em;
+  margin-right: 16px;
+  vertical-align: middle;
+  background: url("images/logo.jpg") center / contain no-repeat;
 }
 
 h2 {
