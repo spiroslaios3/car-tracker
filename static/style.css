@@ -1,19 +1,19 @@
 ﻿:root {
   color-scheme: dark;
-  --bg: #232b2e;
-  --card: #2c363a;
+  --bg: #161c1e;
+  --card: #1f282b;
   --text: #ece4d6;
   --muted: #a2aa9a;
   --accent: #c3b08f;
   --accent-dark: #ad9a7a;
   --danger: #e08a7b;
-  --border: #3f4b4f;
+  --border: #2f3a3d;
 
   --on-accent: #1d2528;
   --ok: #8fae7e;
   --soon: #d9b35f;
-  --hero-from: rgba(29, 37, 40, 0.88);
-  --hero-to: rgba(125, 143, 114, 0.45);
+  --hero-from: rgba(14, 19, 21, 0.9);
+  --hero-to: rgba(125, 143, 114, 0.35);
   --hero-text: #d8d2c0;
 }
 
@@ -39,15 +39,12 @@ h1 {
   font-size: 2rem;
   margin-bottom: 4px;
 }
-
 h1::before {
   content: "";
   display: inline-block;
-  width: 2em;
-  height: 2em;
-  margin-right: 16px;
-  vertical-align: middle;
-  background: url("images/logo.jpg") center / contain no-repeat;
+  width: 1.2em;
+  ...
+  background: url("images/logo.jpg") center / cover no-repeat;
 }
 
 h2 {
@@ -282,13 +279,63 @@ button.secondary:hover {
   text-align: center;
 }
 
-.hero h1::before {
-  content: none;
-}
 
 .hero-logo {
   display: block;
   width: min(420px, 100%);
   height: auto;
   margin: 0 auto;
+}
+
+
+.hero-logo {
+  display: block;
+  width: min(460px, 100%);
+  height: auto;
+  margin: 0 auto;
+  border-radius: 14px;
+  object-view-box: inset(26% 15% 26% 15%);
+}
+
+
+.brand {
+  width: min(420px, 100%);
+  aspect-ratio: 2 / 1;
+  margin: 8px auto 28px;
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  background: url("images/logo-full.jpg") center / 140% auto no-repeat;
+}
+
+.brand::before {
+  content: none;
+}
+
+.hero {
+  padding: 36px 32px;
+}
+
+.hero p {
+  margin: 0;
+  font-size: 1.15rem;
+}
+
+
+.hero {
+  background: none;
+  padding: 0;
+  margin: 0 0 32px;
+  text-align: center;
+}
+
+.hero p {
+  color: var(--muted);
+}
+
+
+body {
+  background:
+    linear-gradient(rgba(22, 28, 30, 0.82), rgba(22, 28, 30, 0.92)),
+    url("images/banner.jpg") center / cover no-repeat fixed;
+  background-color: var(--bg);
 }
