@@ -211,3 +211,32 @@ li {
   background: var(--danger);
   color: #1e1033;
 }
+
+
+.actions {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+button.danger {
+  background: transparent;
+  color: var(--danger);
+  border: 1px solid var(--danger);
+}
+
+button.danger:hover {
+  background: var(--danger);
+  color: #1e1033;
+}
+
+button.secondary {
+  background: transparent;
+  color: var(--muted);
+  border: 1px solid var(--border);
+}
+
+button.secondary:hover {
+  background: var(--border);
+  color: var(--text);
+}

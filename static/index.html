@@ -29,6 +29,19 @@
 
   <div id="details" hidden>
     <h2 id="details-title"></h2>
+    <div class="actions">
+      <button type="button" id="edit-vehicle-btn">Επεξεργασία</button>
+      <button type="button" id="delete-vehicle-btn" class="danger">Διαγραφή οχήματος</button>
+    </div>
+    <form id="edit-form" hidden>
+      <input id="edit-make" placeholder="Μάρκα" required>
+      <input id="edit-model" placeholder="Μοντέλο" required>
+      <input id="edit-year" type="number" placeholder="Έτος" required>
+      <input id="edit-plate" placeholder="Πινακίδα" required>
+      <input id="edit-odometer" type="number" placeholder="Χιλιόμετρα" required>
+      <button type="submit">Αποθήκευση</button>
+      <button type="button" id="cancel-edit-btn" class="secondary">Άκυρο</button>
+    </form>
 
     <h3>Υπενθυμίσεις</h3>
     <ul id="reminder-list"></ul>
@@ -72,6 +85,7 @@
 
   <script>
     let currentVehicleId = null;
+    let currentVehicle = null;
 
     function postJson(url, data) {
       return fetch(url, {
@@ -126,6 +140,8 @@
         fetch(`/vehicles/${vehicleId}/fuel/stats`),
       ]);
       const vehicle = await vehicleResponse.json();
+      currentVehicle = vehicle;
+      document.getElementById("edit-form").hidden = true;
       const services = await servicesResponse.json();
       const stats = await statsResponse.json();
 
@@ -284,6 +300,52 @@
       }
     });
 
+    document.getElementById("edit-vehicle-btn").addEventListener("click", () => {
+      document.getElementById("edit-make").value = currentVehicle.make;
+      document.getElementById("edit-model").value = currentVehicle.model;
+      document.getElementById("edit-year").value = currentVehicle.year;
+      document.getElementById("edit-plate").value = currentVehicle.plate;
+      document.getElementById("edit-odometer").value = currentVehicle.odometer_km;
+      document.getElementById("edit-form").hidden = false;
+    });
+
+    document.getElementById("cancel-edit-btn").addEventListener("click", () => {
+      document.getElementById("edit-form").hidden = true;
+    });
+
+    document.getElementById("edit-form").addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const data = {
+        make: document.getElementById("edit-make").value,
+        model: document.getElementById("edit-model").value,
+        year: Number(document.getElementById("edit-year").value),
+        plate: document.getElementById("edit-plate").value,
+        odometer_km: Number(document.getElementById("edit-odometer").value),
+      };
+      const response = await fetch(`/vehicles/${currentVehicleId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      const ok = await showResult(response, document.getElementById("detail-message"), "Το όχημα ενημερώθηκε!");
+      if (ok) {
+        refreshAll();
+      }
+    });
+
+    document.getElementById("delete-vehicle-btn").addEventListener("click", async () => {
+      const label = `${currentVehicle.make} ${currentVehicle.model} (${currentVehicle.plate})`;
+      if (!confirm(`Να διαγραφεί το όχημα ${label}; Θα διαγραφούν και όλα τα service, οι ανεφοδιασμοί και οι υπενθυμίσεις του.`)) {
+        return;
+      }
+      await fetch(`/vehicles/${currentVehicleId}`, { method: "DELETE" });
+      currentVehicleId = null;
+      currentVehicle = null;
+      document.getElementById("details").hidden = true;
+      loadVehicles();
+      loadSummary();
+    });
+
     async function refreshAll() {
       await loadVehicles();
       if (currentVehicleId !== null) {
@@ -346,6 +408,7 @@
   </script>
 </body>
 </html>
+
 
 
 
