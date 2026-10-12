@@ -16,5 +16,9 @@ A personal digital service book for vehicles: keep a maintenance history, fuel e
 - Frontend: HTML, CSS, vanilla JavaScript
 
 ## Run locally
+python -m venv venv
+venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+uvicorn main:app --reload
 
 Then open http://127.0.0.1:8000/app/ (API docs at http://127.0.0.1:8000/docs).
